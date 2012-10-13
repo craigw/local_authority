@@ -17,5 +17,5 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency 'nokogiri'
   gem.add_development_dependency 'rake'
-  gem.add_development_dependency 'my_society-map_it', '~> 0.0.4'
+  gem.add_development_dependency 'my_society-map_it', '~> 0.0.5'
 end

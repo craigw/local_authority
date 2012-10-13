@@ -1,4 +1,5 @@
 require "local_authority/version"
+require "my_society/map_it"
 require "csv"
 
 module LocalAuthority
@@ -14,6 +15,13 @@ module LocalAuthority
       all.detect { |la|
         la.map_it_id =~ /\/#{id}$/
       }
+    end
+
+    def self.find_by_postcode postcode
+      p = MySociety::MapIt::Postcode.new postcode
+      la = p.local_authority
+      return if la.nil?
+      find_by_map_it_id la.id
     end
 
     attr_accessor :attributes
