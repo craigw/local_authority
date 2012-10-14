@@ -53,6 +53,7 @@ task :local_authorities do
           :direct_gov_id => href
 	}
         next if attributes[:title].to_s.strip == ""
+        puts "  - #{attributes[:title]}"
 	info.xpath(".//li").to_a.each do |li|
 	  key = li.xpath(".//div[@class='headingContainer']").inner_text.to_s.strip
 	  key.gsub! /\s*\(opens new window\)\s*/, ''
@@ -76,7 +77,6 @@ task :local_authorities do
 	end
 
         csv << attributes.values_at(:title, :contact_point, :address, :phone_number, :fax, :website, :opening_hours, :direct_gov_id, :map_it_id)
-
       end
     end
   end
@@ -85,29 +85,38 @@ end
 desc "Connect the local authority database to MapIt"
 task :map_it do
   TMP_FILE = DB_FILE + '.tmp'
-  at_exit { FileUtils.mv TMP_FILE, DB_FILE }
   CSV.open TMP_FILE, 'wb' do |csv|
     csv << HEADERS
     CSV.foreach DB_FILE, :headers => :first_row do |row|
+      retry_count = 0
+      print "Mapping #{row['Name']} at #{postcode}..."
       begin
         if row['MapIt ID'].to_s.strip == ""
 	  postcode = row['Address'].split(/\n/)[-1]
-	  print "Mapping #{postcode}... "
 	  local_authority = MySociety::MapIt::Postcode.new(postcode).local_authority
+          print ' '
 	  if local_authority.nil?
-	    puts "failed"
+            #sleep 30
+            raise "Failed to locate authority record for #{row['Name']} at #{postcode}"
 	  else
 	    row['MapIt ID'] = "http://mapit.mysociety.org/area/#{local_authority.id}"
 	    puts row['MapIt ID']
 	  end
         end
       rescue => e
-        puts e.message
-        puts row.fields.inspect
+        retry_count += 1
+        if retry_count < 5
+          print '.'
+          retry
+        else
+          puts e.message
+          puts row.fields.inspect
+        end
       end
       csv << row.fields
     end
   end
+  FileUtils.mv TMP_FILE, DB_FILE
 end
 
 task :generate => [ :local_authorities, :map_it ]
