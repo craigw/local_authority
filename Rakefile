@@ -44,6 +44,7 @@ task :local_authorities do
       authorities = doc.xpath "//ul[@class='atoz']/../../div[@class='subContent']/div[@class='subContent']"
       authorities.to_a.each do |a|
 	info_link = a.at_xpath("./ul[@class='subLinks']/li/a")
+        next if a.inner_text.to_s =~ /Greater London Authority/
 	href = [ 'http://www.direct.gov.uk', info_link['href'] ].join
 	r = fetch href
 	doc = Nokogiri::HTML r.body
